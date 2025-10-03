@@ -1,1 +1,683 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ClickerQuest</title>
+<style>
+  /* ========= Base / Theme ========= */
+  :root{
+    --bg-dark: #0f1113;
+    --panel-dark: #16191b;
+    --muted-dark: #94a1a6;
+    --accent: #3a86ff;
+    --accent-2: #6fe7b8;
+    --text-dark: #e6eef3;
+
+    --bg-light: #f5f7f9;
+    --panel-light: #ffffff;
+    --muted-light: #55606a;
+    --text-light: #0b1216;
+  }
+
+  html,body{
+    height:100%;
+    margin:0;
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    background:var(--bg-dark);
+    color:var(--text-dark);
+  }
+
+  /* light mode toggled with .light class on body */
+  body.light {
+    background:var(--bg-light);
+    color:var(--text-light);
+  }
+
+  /* ========= Layout ========= */
+  .wrap {
+    max-width:1100px;
+    margin:18px auto;
+    padding:14px;
+    box-sizing:border-box;
+    display:grid;
+    grid-template-columns: 1fr 360px; /* main + sidebar */
+    gap:16px;
+  }
+
+  /* stack for small screens */
+  @media (max-width:980px){
+    .wrap { grid-template-columns: 1fr; padding:10px; gap:12px; }
+  }
+
+  header {
+    grid-column: 1 / -1;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    padding:10px 6px;
+  }
+
+  /* Logo scales with container */
+  .logo {
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  .logo img {
+    height:56px;
+    width:auto;
+    max-width:220px;
+    display:block;
+  }
+  .title {
+    font-size:18px;
+    font-weight:700;
+  }
+  .subtitle {
+    font-size:12px;
+    color:var(--muted-dark);
+  }
+  body.light .subtitle { color:var(--muted-light); }
+
+  /* ========= Panels ========= */
+  .panel {
+    background:var(--panel-dark);
+    border-radius:10px;
+    padding:12px;
+    box-sizing:border-box;
+    border:1px solid rgba(255,255,255,0.02);
+  }
+  body.light .panel {
+    background:var(--panel-light);
+    border:1px solid rgba(0,0,0,0.04);
+  }
+
+  /* main / right */
+  .main { padding:12px; }
+  .right { padding:12px; }
+
+  /* ========= Click Area ========= */
+  .click-row {
+    display:flex;
+    gap:14px;
+    align-items:center;
+    margin-bottom:12px;
+    flex-wrap:wrap;
+  }
+
+  #click-btn {
+    width:150px;
+    height:150px;
+    border-radius:999px;
+    border:0;
+    font-size:18px;
+    font-weight:800;
+    cursor:pointer;
+    background:linear-gradient(180deg,var(--accent),var(--accent-2));
+    color:#04100f;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:8px;
+    box-sizing:border-box;
+  }
+
+  /* smaller button size for small screens */
+  @media (max-width:480px){
+    #click-btn { width:120px; height:120px; font-size:16px; }
+  }
+
+  .resource-info { flex:1; min-width:220px; }
+  .resource-large { font-size:28px; font-weight:800; line-height:1; }
+  .muted { color:var(--muted-dark); font-size:13px; }
+  body.light .muted { color:var(--muted-light); }
+
+  .substats { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+  .stat { padding:8px 10px; border-radius:8px; background:rgba(255,255,255,0.01); min-width:120px; text-align:left; }
+  .stat .label { font-size:12px; color:var(--muted-dark); }
+  .stat .value { font-weight:700; font-size:16px; }
+
+  /* ========= Buttons (global) ========= */
+  .btn {
+    display:inline-block;
+    padding:10px 14px;
+    border-radius:10px;
+    border:0;
+    cursor:pointer;
+    font-weight:700;
+    background:var(--accent);
+    color:white;
+    max-width:320px;
+    width:100%;
+    box-sizing:border-box;
+  }
+  .btn.secondary { background:transparent; color:inherit; border:1px solid rgba(255,255,255,0.06); padding:8px 12px; }
+  .btn.warn { background:#ff6b6b; color:#fff; }
+
+  /* make native buttons more touch-friendly on small screens */
+  @media (max-width:480px){
+    .btn { padding:12px 16px; font-size:15px; }
+  }
+
+  /* ========= Lists ========= */
+  .list { display:flex; flex-direction:column; gap:8px; margin-top:8px; }
+  .list .row { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:8px; border-radius:8px; background:rgba(0,0,0,0.02); }
+  body.light .list .row { background:rgba(0,0,0,0.02); }
+
+  /* ========= Stats Panel (mobile stacking improvements) ========= */
+  .stats-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; }
+  @media (max-width:620px){ .stats-grid { grid-template-columns: 1fr; } }
+
+  .small { font-size:13px; color:var(--muted-dark); }
+  body.light .small { color:var(--muted-light); }
+
+  /* footer note */
+  footer { grid-column:1 / -1; text-align:center; font-size:13px; color:var(--muted-dark); padding:8px 6px; }
+  body.light footer { color:var(--muted-light); }
+
+</style>
+</head>
+<body class="">
+  <div class="wrap" role="application" aria-label="ClickerQuest">
+    <!-- HEADER -->
+    <header>
+      <div class="logo">
+        <!-- Put your clickerquest.png in the same folder as this HTML -->
+        <img src="clickerquest.png" alt="ClickerQuest logo" onerror="this.style.display='none'">
+        <div>
+          <div class="title">ClickerQuest</div>
+          <div class="subtitle small">Dark mode by default · Mobile / Kindle friendly</div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:8px; align-items:center;">
+        <button id="theme-toggle" class="btn secondary" style="max-width:160px;">Light mode</button>
+        <!-- Optional quick actions could be added here if you want later -->
+      </div>
+    </header>
+
+    <!-- MAIN COLUMN -->
+    <main class="panel main" role="main">
+      <section class="click-row" aria-label="Click area">
+        <button id="click-btn" aria-label="Click to gain gold">STRIKE<br><span id="strike-gold" style="display:block; font-size:13px; margin-top:8px; font-weight:800;">+1</span></button>
+
+        <div class="resource-info">
+          <div id="gold" class="resource-large" aria-live="polite">0 Gold</div>
+          <div class="muted">Press <kbd>Space</kbd> or tap the circle to strike. Earn gold to buy upgrades, take quests, Rebirth or Ascend.</div>
+
+          <div class="substats" style="margin-top:12px;">
+            <div class="stat"><div class="label">Per Click</div><div id="gpc" class="value">1</div></div>
+            <div class="stat"><div class="label">Per Sec</div><div id="gps" class="value">0</div></div>
+            <div class="stat"><div class="label">Level</div><div id="level" class="value">1</div></div>
+            <div class="stat"><div class="label">XP</div><div id="xp" class="value">0</div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Upgrades -->
+      <section class="panel" style="margin-top:12px;">
+        <h3 style="margin:0 0 8px 0;">Upgrades & Allies</h3>
+        <div class="small">Increase gold per click or hire allies for passive income.</div>
+        <div id="upgrades-list" class="list" role="list" aria-live="polite"></div>
+      </section>
+
+      <!-- Actions -->
+      <section class="panel" style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+        <div style="flex:1; min-width:180px;">
+          <h4 style="margin:0 0 8px 0;">Prestige</h4>
+          <button id="rebirth-btn" class="btn">Rebirth (Reset)</button>
+          <div class="small" style="margin-top:8px;">Gain permanent Rebirth Tokens to boost future runs.</div>
+        </div>
+
+        <div style="flex:1; min-width:180px;">
+          <h4 style="margin:0 0 8px 0;">Ascension</h4>
+          <button id="ascend-btn" class="btn">Ascend (Divine)</button>
+          <div class="small" style="margin-top:8px;">Perform a higher-tier reset to gain Divine Shards for special perks.</div>
+        </div>
+
+        <div style="flex:1 1 100%; margin-top:8px;">
+          <button id="quest-btn" class="btn secondary">Choose Quest</button>
+          <button id="boss-btn" class="btn secondary" style="margin-left:8px;">Challenge Boss</button>
+        </div>
+      </section>
+
+      <!-- Log -->
+      <section class="panel" style="margin-top:12px;">
+        <h4 style="margin:0 0 8px 0;">Log</h4>
+        <div id="log" class="small" style="max-height:160px; overflow:auto; padding:6px; background:transparent;"></div>
+        <div style="margin-top:8px;" class="small">Autosaves to your browser every 15s (local only).</div>
+      </section>
+    </main>
+
+    <!-- RIGHT SIDEBAR -->
+    <aside class="panel right" aria-label="Sidebar">
+      <!-- Stats panel -->
+      <div>
+        <h3 style="margin:0 0 10px 0;">Stats</h3>
+        <div class="stats-grid">
+          <div class="small"><strong>Gold / Click</strong><div id="stat-gpc">1</div></div>
+          <div class="small"><strong>Gold / Sec</strong><div id="stat-gps">0</div></div>
+          <div class="small"><strong>Rebirth Tokens</strong><div id="stat-rebirth">0</div></div>
+          <div class="small"><strong>Divine Shards</strong><div id="stat-shards">0</div></div>
+          <div class="small"><strong>Total Rebirths</strong><div id="stat-rebirth-total">0</div></div>
+          <div class="small"><strong>Total Ascensions</strong><div id="stat-asc-total">0</div></div>
+        </div>
+      </div>
+
+      <hr style="margin:12px 0; border:none; height:1px; background:rgba(255,255,255,0.03)">
+
+      <!-- Quests -->
+      <div>
+        <h3 style="margin:0 0 8px 0;">Quests</h3>
+        <div id="quests" class="list" aria-live="polite"></div>
+      </div>
+
+      <hr style="margin:12px 0; border:none; height:1px; background:rgba(255,255,255,0.03)">
+
+      <!-- Ascension Perks (simple) -->
+      <div>
+        <h3 style="margin:0 0 8px 0;">Ascension Perks</h3>
+        <div id="ascend-perks" class="list"></div>
+      </div>
+    </aside>
+
+    <footer>Works offline in your browser • Place <code>clickerquest.png</code> in the same folder as this file</footer>
+  </div>
+
+<script>
+/* ============================
+   ClickerQuest (single-file)
+   Responsive, lightweight, autosave
+   ============================ */
+
+/* ---------- Default state ---------- */
+const DEFAULT = {
+  gold: 0,
+  level: 1,
+  xp: 0,
+  xpNeeded: 10,
+  baseGPC: 1,
+  gpc: 1,
+  gps: 0,
+  upgrades: {},
+  rebirthTokens: 0,
+  rebirthMultiplier: 1,
+  rebirthTotal: 0,
+  shards: 0,
+  ascendPerks: [],
+  totalAscensions: 0,
+  lastTick: Date.now()
+};
+
+let state = load() || Object.assign({}, DEFAULT);
+
+/* ---------- Definitions ---------- */
+const UPGRADES_DEF = [
+  { id:'sword', name:'Rusty Sword', baseCost: 10, type:'gpc', value:1, desc:'+1 GPC', unlockLevel:1 },
+  { id:'apprentice', name:'Apprentice', baseCost: 80, type:'gps', value:1, desc:'+1 GPS', unlockLevel:2 },
+  { id:'ironSword', name:'Iron Sword', baseCost: 400, type:'gpc', value:5, desc:'+5 GPC', unlockLevel:4 },
+  { id:'mercenary', name:'Mercenary', baseCost: 1500, type:'gps', value:10, desc:'+10 GPS', unlockLevel:6 },
+  { id:'arcane', name:'Arcane Blade', baseCost: 8000, type:'gpc', value:40, desc:'+40 GPC', unlockLevel:10 },
+  { id:'guild', name:'Guild Hall', baseCost: 40000, type:'gps', value:120, desc:'+120 GPS', unlockLevel:14 },
+];
+
+const ASCEND_PERKS_DEF = [
+  { id:'shard_gpc_plus', name:'Blessed Strikes', cost:2, desc:'+10% base GPC' },
+  { id:'shard_gps_plus', name:'Divine Wellspring', cost:3, desc:'+15% GPS' },
+  { id:'gold_find', name:'Fortune Favor', cost:5, desc:'+20% quest rewards' },
+];
+
+const QUESTS = [
+  { id:'goblin', title:'Goblin Hunt', baseCost:0, baseReward:20, xp:6, difficulty:1, desc:'Clear goblins in the hills.' },
+  { id:'relic', title:'Lost Relic', baseCost:50, baseReward:120, xp:20, difficulty:3, desc:'Retrieve a relic from ruins.' },
+  { id:'bandit', title:'Bandit Raid', baseCost:200, baseReward:650, xp:60, difficulty:6, desc:'Stop bandits from looting caravans.' },
+];
+
+const BOSSES = [
+  { id:'ogre', name:'Ogre Chieftain', baseHP:300, rewardGold:1200, rewardXP:240, difficulty:8, desc:'A hulking ogre with a heavy club.' },
+  { id:'wyrm', name:'Cavern Wyrm', baseHP:2500, rewardGold:8000, rewardXP:1200, difficulty:16, desc:'A serpentine wyrm in dark caverns.' }
+];
+
+/* ---------- Helpers ---------- */
+const $ = (s) => document.querySelector(s);
+const nFmt = (n) => {
+  if (n >= 1e12) return (n/1e12).toFixed(2) + 'T';
+  if (n >= 1e9) return (n/1e9).toFixed(2) + 'B';
+  if (n >= 1e6) return (n/1e6).toFixed(2) + 'M';
+  if (n >= 1e3) return (n/1e3).toFixed(2) + 'k';
+  return Math.floor(n);
+};
+
+function save(){
+  try {
+    state.lastTick = Date.now();
+    localStorage.setItem('clickerquest_save_v1', JSON.stringify(state));
+  } catch(e){ console.warn('Save error', e); }
+}
+function load(){
+  try {
+    const raw = localStorage.getItem('clickerquest_save_v1');
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch(e){ console.warn('Load error', e); return null; }
+}
+
+/* ---------- Derived recalculations ---------- */
+function recalc(){
+  let base = state.baseGPC || 1;
+  if (state.ascendPerks && state.ascendPerks.includes('shard_gpc_plus')) base *= 1.10;
+  state.gpc = (base + calcUpgradeTotal('gpc')) * state.rebirthMultiplier;
+  let gps = calcUpgradeTotal('gps') * state.rebirthMultiplier;
+  if (state.ascendPerks && state.ascendPerks.includes('shard_gps_plus')) gps *= 1.15;
+  state.gps = gps;
+}
+function calcUpgradeTotal(type){
+  let sum = 0;
+  for (const def of UPGRADES_DEF){
+    const owned = state.upgrades[def.id] || 0;
+    if (def.type === type) sum += owned * def.value;
+  }
+  return sum;
+}
+
+/* ---------- UI Log ---------- */
+function addLog(text, muted=false){
+  const el = document.createElement('div');
+  el.innerHTML = `<strong style="color:var(--accent)">${new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</strong> — ${text}`;
+  if (muted) el.style.color = getComputedStyle(document.body).getPropertyValue('--muted-dark') || '#94a1a6';
+  $('#log').prepend(el);
+  while ($('#log').children.length > 400) $('#log').removeChild($('#log').lastChild);
+}
+
+/* ---------- Core actions ---------- */
+function giveGold(amount){
+  const bonus = state.ascendPerks && state.ascendPerks.includes('gold_find') ? 1.20 : 1;
+  const gain = Math.floor(amount * bonus);
+  state.gold += gain;
+  state.xp += Math.max(1, Math.floor(gain / 10));
+  maybeLevelUp();
+  updateUI();
+  return gain;
+}
+function maybeLevelUp(){
+  while (state.xp >= state.xpNeeded){
+    state.xp -= state.xpNeeded;
+    state.level++;
+    state.xpNeeded = Math.floor(10 * Math.pow(1.35, state.level - 1));
+    const reward = Math.floor(state.level * 5 * state.rebirthMultiplier);
+    state.gold += reward;
+    addLog(`Leveled up to ${state.level}. Bonus ${nFmt(reward)} gold.`);
+  }
+}
+
+/* Click / Passive */
+function onClick(){
+  const gain = Math.max(1, Math.floor(state.gpc));
+  $('#strike-gold').textContent = `+${nFmt(gain)}`;
+  giveGold(gain);
+}
+
+/* Passive tick */
+function tick(deltaMs){
+  const sec = deltaMs / 1000;
+  if (state.gps > 0){
+    const amt = state.gps * sec;
+    state.gold += amt;
+    state.xp += Math.floor(amt / 10);
+    maybeLevelUp();
+  }
+}
+
+/* ---------- Upgrades ---------- */
+function getUpgradeCost(def, owned){
+  const growth = 1.18;
+  return Math.ceil(def.baseCost * Math.pow(growth, owned || 0));
+}
+function buyUpgrade(id){
+  const def = UPGRADES_DEF.find(x=>x.id===id);
+  const owned = state.upgrades[id] || 0;
+  const cost = getUpgradeCost(def, owned);
+  if (state.gold < cost){ addLog(`Not enough gold for ${def.name}. Need ${nFmt(cost)}.`); return; }
+  state.gold -= cost;
+  state.upgrades[id] = owned + 1;
+  addLog(`Bought ${def.name} (x${state.upgrades[id]}).`);
+  recalc(); updateUI(); save();
+}
+
+/* ---------- Rebirth & Ascension ---------- */
+function canRebirth(){ return state.gold >= Math.max(1000, 10000 * (state.rebirthTotal)); }
+function doRebirth(){
+  if (!canRebirth()){ addLog('Not ready to Rebirth yet.'); return; }
+  const gained = Math.max(1, Math.floor((state.gold / 10000)));
+  state.rebirthTokens += gained;
+  state.rebirthTotal += 1;
+  state.rebirthMultiplier = 1 + state.rebirthTokens * 0.05;
+  addLog(`Rebirth! +${gained} Rebirth Tokens. Multiplier x${state.rebirthMultiplier.toFixed(2)}.`);
+  const keep = { shards: state.shards, ascendPerks: state.ascendPerks.slice(), rebirthTokens: state.rebirthTokens, rebirthTotal: state.rebirthTotal };
+  state = Object.assign({}, DEFAULT, keep);
+  recalc(); updateUI(); save();
+}
+function canAscend(){ return state.rebirthTotal >= 10; }
+function doAscend(){
+  if (!canAscend()){ addLog('Need at least 10 rebirths to Ascend.'); return; }
+  const shardsGained = Math.floor(state.rebirthTotal / 5);
+  state.shards += shardsGained;
+  addLog(`Ascended! Gained ${shardsGained} Divine Shards.`);
+  state.rebirthTokens = 0;
+  state.rebirthMultiplier = 1;
+  state.rebirthTotal = 0;
+  const keep = { shards: state.shards, ascendPerks: state.ascendPerks.slice(), totalAscensions: (state.totalAscensions || 0) + 1 };
+  state = Object.assign({}, DEFAULT, keep);
+  state.totalAscensions = keep.totalAscensions;
+  recalc(); updateUI(); save();
+}
+
+/* ---------- Quests & Bosses ---------- */
+function generateQuests(){
+  const container = $('#quests');
+  container.innerHTML = '';
+  for (const q of QUESTS){
+    const reward = Math.floor(q.baseReward * Math.pow(1.12, state.level));
+    const cost = Math.floor(q.baseCost * Math.pow(1.25, q.difficulty - 1));
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.innerHTML = `<div><strong>${q.title}</strong><div class="small">${q.desc}</div></div>
+      <div style="text-align:right">
+        <div class="small">Cost ${nFmt(cost)} • Reward ${nFmt(reward)}</div>
+        <button class="btn secondary" onclick="attemptQuest('${q.id}')">Attempt</button>
+      </div>`;
+    container.appendChild(row);
+  }
+}
+function attemptQuest(id){
+  const q = QUESTS.find(x=>x.id===id);
+  const cost = Math.floor(q.baseCost * Math.pow(1.25, q.difficulty - 1));
+  if (state.gold < cost){ addLog('Not enough gold to take that quest.'); return; }
+  state.gold -= cost;
+  const successChance = Math.min(0.98, Math.max(0.2, 0.45 + (state.level / (state.level + q.difficulty * 5))));
+  const success = Math.random() < successChance;
+  if (success){
+    let reward = Math.floor(q.baseReward * Math.pow(1.12, state.level));
+    if (state.ascendPerks.includes('gold_find')) reward = Math.floor(reward * 1.20);
+    state.gold += reward;
+    state.xp += q.xp;
+    addLog(`Quest succeeded: ${q.title}, gained ${nFmt(reward)} gold.`);
+  } else {
+    const loss = Math.floor(cost * 0.4);
+    state.gold = Math.max(0, state.gold - loss);
+    addLog(`Quest failed: ${q.title}, lost ${nFmt(loss)} gold.`);
+  }
+  recalc(); updateUI(); save();
+}
+
+/* Bosses (simple) */
+let currentBoss = null;
+function generateBosses(){ /* not used visually (kept for future expansion) */ }
+function startBoss(bossId){
+  if (currentBoss) { addLog('Already fighting a boss.'); return; }
+  const t = BOSSES.find(b=>b.id===bossId);
+  currentBoss = { ...t, hp: Math.floor(t.baseHP * Math.pow(1.2, state.level / 5)), maxHp: t.baseHP };
+  addLog(`Boss fight started: ${currentBoss.name}. Click to deal ${nFmt(Math.floor(state.gpc))} damage per hit.`);
+}
+function attackBoss(){
+  if (!currentBoss) return;
+  const dmg = Math.max(1, Math.floor(state.gpc));
+  currentBoss.hp -= dmg;
+  addLog(`Hit ${currentBoss.name} for ${nFmt(dmg)} damage. ${nFmt(Math.max(0,currentBoss.hp))} HP left.`);
+  if (Math.random() < 0.25){
+    const loss = Math.floor(Math.max(1, state.level * 2));
+    state.gold = Math.max(0, state.gold - loss);
+    addLog(`${currentBoss.name} counterattacks: lost ${nFmt(loss)} gold.`);
+  }
+  if (currentBoss.hp <= 0){
+    const gw = Math.floor(currentBoss.rewardGold * Math.pow(1.08, state.level/5));
+    const xpw = Math.floor(currentBoss.rewardXP * Math.pow(1.05, state.level/5));
+    state.gold += gw;
+    state.xp += xpw;
+    addLog(`Defeated ${currentBoss.name}! Gained ${nFmt(gw)} gold and ${nFmt(xpw)} xp.`);
+    currentBoss = null; maybeLevelUp(); recalc(); save(); updateUI();
+  }
+  updateUI();
+}
+
+/* ---------- Ascend Perk purchase ---------- */
+function renderAscendPerks(){
+  const el = $('#ascend-perks');
+  el.innerHTML = '';
+  for (const p of ASCEND_PERKS_DEF){
+    const owned = state.ascendPerks.includes(p.id);
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.innerHTML = `<div><strong>${p.name}</strong><div class="small">${p.desc}</div></div>
+      <div>${owned ? '<div class="small">Purchased</div>' : `<button class="btn secondary" onclick="buyAscendPerk('${p.id}')">${p.cost} ♦</button>`}</div>`;
+    el.appendChild(row);
+  }
+}
+function buyAscendPerk(id){
+  const p = ASCEND_PERKS_DEF.find(x=>x.id===id);
+  if (!p) return;
+  if (state.shards < p.cost){ addLog('Not enough Divine Shards.'); return; }
+  if (state.ascendPerks.includes(id)){ addLog('Perk already purchased.'); return; }
+  state.shards -= p.cost;
+  state.ascendPerks.push(id);
+  addLog(`Purchased Ascension Perk: ${p.name}`);
+  recalc(); updateUI(); save();
+}
+
+/* ---------- UI Rendering ---------- */
+function renderUpgradesList(){
+  const list = $('#upgrades-list');
+  list.innerHTML = '';
+  for (const def of UPGRADES_DEF){
+    const owned = state.upgrades[def.id] || 0;
+    if (state.level < def.unlockLevel){
+      const row = document.createElement('div');
+      row.className = 'row';
+      row.innerHTML = `<div><strong>${def.name}</strong><div class="small">Unlocks at level ${def.unlockLevel}</div></div>
+        <div><button class="btn secondary" disabled>Locked</button></div>`;
+      list.appendChild(row);
+      continue;
+    }
+    const cost = getUpgradeCost(def, owned);
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.innerHTML = `<div><strong>${def.name}</strong><div class="small">${def.desc} • Owned: ${owned}</div></div>
+      <div style="text-align:right;">
+        <div class="small">Cost ${nFmt(cost)}</div>
+        <button class="btn" onclick="buyUpgrade('${def.id}')">Buy</button>
+      </div>`;
+    list.appendChild(row);
+  }
+}
+
+/* ---------- Update UI values ---------- */
+function updateUI(){
+  $('#gold').textContent = `${nFmt(Math.floor(state.gold))} Gold`;
+  $('#gpc').textContent = nFmt(Math.floor(state.gpc));
+  $('#gps').textContent = nFmt(Math.floor(state.gps));
+  $('#level').textContent = state.level;
+  $('#xp').textContent = `${Math.floor(state.xp)}/${state.xpNeeded}`;
+
+  $('#stat-gpc').textContent = nFmt(Math.floor(state.gpc));
+  $('#stat-gps').textContent = nFmt(Math.floor(state.gps));
+  $('#stat-rebirth').textContent = nFmt(Math.floor(state.rebirthTokens));
+  $('#stat-shards').textContent = nFmt(Math.floor(state.shards));
+  $('#stat-rebirth-total').textContent = nFmt(Math.floor(state.rebirthTotal));
+  $('#stat-asc-total').textContent = nFmt(Math.floor(state.totalAscensions || 0));
+
+  renderUpgradesList();
+  generateQuests();
+  renderAscendPerks();
+}
+
+/* ---------- Input Bindings & Controls ---------- */
+$('#click-btn').addEventListener('click', () => {
+  onClick();
+  if (currentBoss) attackBoss();
+});
+window.addEventListener('keydown', (e) => {
+  if (e.code === 'Space'){
+    e.preventDefault();
+    onClick();
+    if (currentBoss) attackBoss();
+  }
+});
+$('#rebirth-btn').addEventListener('click', () => {
+  if (!confirm('Perform Rebirth? This resets progress but grants Rebirth Tokens.')) return;
+  doRebirth();
+});
+$('#ascend-btn').addEventListener('click', () => {
+  if (!confirm('Ascend? Requires many Rebirths and will reset most progress for Divine Shards.')) return;
+  doAscend();
+});
+$('#quest-btn').addEventListener('click', ()=> addLog('Select a quest on the right to attempt it.'));
+$('#boss-btn').addEventListener('click', ()=> addLog('Boss fights appear when available. Click to damage them.'));
+$('#theme-toggle').addEventListener('click', () => {
+  document.body.classList.toggle('light');
+  $('#theme-toggle').textContent = document.body.classList.contains('light') ? 'Dark mode' : 'Light mode';
+});
+
+/* ---------- Game Loop & Autosave ---------- */
+let last = Date.now();
+function loop(){
+  const now = Date.now();
+  const delta = Math.min(1000, now - last);
+  last = now;
+  tick(delta);
+  recalc();
+  updateUI();
+}
+setInterval(loop, 1000);
+
+/* autosave */
+setInterval(()=> {
+  save();
+  addLog('Autosave.', true);
+}, 15000);
+
+/* ---------- Init ---------- */
+function init(){
+  state = Object.assign({}, DEFAULT, state); // fill missing defaults
+  if (!state.upgrades) state.upgrades = {};
+  recalc();
+  updateUI();
+  addLog('Welcome to ClickerQuest — Dark mode enabled by default.', true);
+}
+init();
+
+/* expose some functions for inline HTML actions (used by buttons) */
+window.attemptQuest = attemptQuest;
+window.buyUpgrade = buyUpgrade;
+window.startBoss = startBoss;
+window.buyAscendPerk = buyAscendPerk;
+window.attackBoss = attackBoss;
+
+</script>
+</body>
+</html>
 
